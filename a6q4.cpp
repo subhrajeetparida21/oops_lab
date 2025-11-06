@@ -3,162 +3,168 @@
 #include <complex>
 using namespace std;
 
-// Node structure
-template <typename T>
-struct Node {
-    T data;
-    Node* next;
-    Node(T val) : data(val), next(nullptr) {}
-};
-
-// Single Linked List Template
-template <typename T>
-class SingleLinkedList {
-private:
-    Node<T>* head;
-
-    void copyList(const SingleLinkedList& other) {
-        if (!other.head) {
-            head = nullptr;
-            return;
-        }
-        head = new Node<T>(other.head->data);
-        Node<T>* temp1 = head;
-        Node<T>* temp2 = other.head->next;
-        while (temp2) {
-            temp1->next = new Node<T>(temp2->data);
-            temp1 = temp1->next;
-            temp2 = temp2->next;
-        }
-    }
-
+template<typename T>
+class List {
+    struct Node {
+        T data;
+        Node* next;
+        Node(T v, Node* n=nullptr):data(v),next(n){}
+    };
+    Node* head;
 public:
-    // Default constructor
-    SingleLinkedList() : head(nullptr) {}
-
-    // Copy constructor
-    SingleLinkedList(const SingleLinkedList& other) {
-        copyList(other);
-    }
-
-    // Assignment operator
-    SingleLinkedList& operator=(const SingleLinkedList& other) {
-        if (this != &other) {
-            this->~SingleLinkedList();
-            copyList(other);
-        }
-        return *this;
-    }
-
-    // Insert at end
-    void insert(T val) {
-        Node<T>* newNode = new Node<T>(val);
-        if (!head) {
-            head = newNode;
-            return;
-        }
-        Node<T>* temp = head;
-        while (temp->next) temp = temp->next;
-        temp->next = newNode;
-    }
-
-    // Concatenate (+)
-    SingleLinkedList operator+(const SingleLinkedList& other) const {
-        SingleLinkedList result(*this); // copy first list
-        Node<T>* temp = other.head;
-        while (temp) {
-            result.insert(temp->data);
-            temp = temp->next;
-        }
-        return result;
-    }
-
-    // Reverse (!)
-    SingleLinkedList operator!() const {
-        SingleLinkedList result;
-        Node<T>* temp = head;
-        while (temp) {
-            Node<T>* newNode = new Node<T>(temp->data);
-            newNode->next = result.head;
-            result.head = newNode;
-            temp = temp->next;
-        }
-        return result;
-    }
-
-    // Compare (==)
-    bool operator==(const SingleLinkedList& other) const {
-        Node<T>* temp1 = head;
-        Node<T>* temp2 = other.head;
-        while (temp1 && temp2) {
-            if (temp1->data != temp2->data) return false;
-            temp1 = temp1->next;
-            temp2 = temp2->next;
-        }
-        return (!temp1 && !temp2);
-    }
-
-    // Output operator
-    friend ostream& operator<<(ostream& out, const SingleLinkedList& list) {
-        Node<T>* temp = list.head;
-        while (temp) {
-            out << temp->data << " -> ";
-            temp = temp->next;
-        }
-        out << "NULL";
-        return out;
-    }
-
-    // Input operator
-    friend istream& operator>>(istream& in, SingleLinkedList& list) {
-        int n;
-        cout << "Enter number of elements: ";
-        in >> n;
-        for (int i = 0; i < n; i++) {
-            T val;
-            cout << "Enter value " << i + 1 << ": ";
-            in >> val;
-            list.insert(val);
-        }
-        return in;
-    }
+    List();
+    List(const List& l);
+    ~List();
+    void insert(T v);
+    void clear();
+    List operator+(const List& l);
+    List operator!();
+    bool operator==(const List& l);
+    List& operator=(const List& l);
+    template<typename U> friend istream& operator>>(istream& in, List<U>& l);
+    template<typename U> friend ostream& operator<<(ostream& out, const List<U>& l);
 };
 
-// Main function
-int main() {
-    cout << "Integer Linked List:\n";
-    SingleLinkedList<int> l1, l2;
-    cin >> l1;
-    cin >> l2;
 
-    cout << "\nList 1: " << l1 << endl;
-    cout << "List 2: " << l2 << endl;
+template<typename T>
+List<T>::List():head(nullptr){}
 
-    // Concatenate
-    auto l3 = l1 + l2;
-    cout << "Concatenated: " << l3 << endl;
-
-    // Reverse
-    auto l4 = !l1;
-    cout << "Reversed List1: " << l4 << endl;
-
-    // Compare
-    cout << "List1 == List2 ? " << (l1 == l2 ? "Yes" : "No") << endl;
-
-    cout << "\nString Linked List:\n";
-    SingleLinkedList<string> s1, s2;
-    cin >> s1;
-    cin >> s2;
-
-    cout << "Concatenated String List: " << (s1 + s2) << endl;
-
-    cout << "\nComplex Number Linked List:\n";
-    SingleLinkedList<complex<double>> c1, c2;
-    cin >> c1;
-    cin >> c2;
-
-    cout << "Concatenated Complex List: " << (c1 + c2) << endl;
-
-    return 0;
+template<typename T>
+List<T>::List(const List& l){
+    head=nullptr;
+    Node* p=l.head;
+    Node* arr[1000];
+    int k=0;
+    while(p){ arr[k++]=p; p=p->next; }
+    for(int i=k-1;i>=0;i--) insert(arr[i]->data);
 }
 
+template<typename T>
+List<T>::~List(){ clear(); }
+
+template<typename T>
+void List<T>::insert(T v){
+    if(!head) head=new Node(v);
+    else{
+        Node* p=head;
+        while(p->next) p=p->next;
+        p->next=new Node(v);
+    }
+}
+
+template<typename T>
+void List<T>::clear(){
+    while(head){
+        Node* t=head;
+        head=head->next;
+        delete t;
+    }
+}
+
+template<typename T>
+List<T> List<T>::operator+(const List& l){
+    List r(*this);
+    Node* p=l.head;
+    while(p){ r.insert(p->data); p=p->next; }
+    return r;
+}
+
+template<typename T>
+List<T> List<T>::operator!(){
+    List r;
+    Node* p=head;
+    while(p){ r.insert(p->data); p=p->next; }
+    Node* prev=nullptr;
+    Node* curr=r.head;
+    Node* next=nullptr;
+    while(curr){
+        next=curr->next;
+        curr->next=prev;
+        prev=curr;
+        curr=next;
+    }
+    r.head=prev;
+    return r;
+}
+
+template<typename T>
+bool List<T>::operator==(const List& l){
+    Node* p=head;
+    Node* q=l.head;
+    while(p&&q){
+        if(p->data!=q->data) return false;
+        p=p->next; q=q->next;
+    }
+    return p==nullptr && q==nullptr;
+}
+
+template<typename T>
+List<T>& List<T>::operator=(const List& l){
+    if(this==&l) return *this;
+    clear();
+    Node* p=l.head;
+    Node* arr[1000];
+    int k=0;
+    while(p){ arr[k++]=p; p=p->next; }
+    for(int i=k-1;i>=0;i--) insert(arr[i]->data);
+    return *this;
+}
+
+template<typename T>
+istream& operator>>(istream& in, List<T>& l){
+    T v; in>>v; l.insert(v); return in;
+}
+
+template<typename T>
+ostream& operator<<(ostream& out, const List<T>& l){
+    typename List<T>::Node* p=l.head;
+    while(p){ out<<p->data<<" "; p=p->next; }
+    return out;
+}
+
+
+int main(){
+    cout<<"Select data type:\n1. Integer\n2. String\n3. Complex\nChoice: ";
+    int ch; cin>>ch;
+    if(ch==1){
+        List<int> a,b;
+        int n,v;
+        cout<<"Enter elements of List A (enter -1 to stop): ";
+        while(true){ cin>>v; if(v==-1) break; a.insert(v); }
+        cout<<"Enter elements of List B (enter -1 to stop): ";
+        while(true){ cin>>v; if(v==-1) break; b.insert(v); }
+        cout<<"A: "<<a<<"\nB: "<<b<<"\n";
+        cout<<"A==B: "<<(a==b)<<"\n";
+        List<int> c=a+b;
+        cout<<"A+B: "<<c<<"\n";
+        cout<<"Reversed A: "<<!a<<"\n";
+    }
+    else if(ch==2){
+        List<string> a,b;
+        string s;
+        cout<<"Enter elements of List A (type 'end' to stop): ";
+        while(true){ cin>>s; if(s=="end") break; a.insert(s); }
+        cout<<"Enter elements of List B (type 'end' to stop): ";
+        while(true){ cin>>s; if(s=="end") break; b.insert(s); }
+        cout<<"A: "<<a<<"\nB: "<<b<<"\n";
+        cout<<"A==B: "<<(a==b)<<"\n";
+        List<string> c=a+b;
+        cout<<"A+B: "<<c<<"\n";
+        cout<<"Reversed A: "<<!a<<"\n";
+    }
+    else if(ch==3){
+        List<complex<double>> a,b;
+        complex<double> c1;
+        double r,i;
+        cout<<"Enter complex numbers for List A (enter 999 to stop): ";
+        while(true){ cin>>r; if(r==999) break; cin>>i; a.insert({r,i}); }
+        cout<<"Enter complex numbers for List B (enter 999 to stop): ";
+        while(true){ cin>>r; if(r==999) break; cin>>i; b.insert({r,i}); }
+        cout<<"A: "<<a<<"\nB: "<<b<<"\n";
+        cout<<"A==B: "<<(a==b)<<"\n";
+        List<complex<double>> c=a+b;
+        cout<<"A+B: "<<c<<"\n";
+        cout<<"Reversed A: "<<!a<<"\n";
+    }
+    else cout<<"Invalid choice\n";
+}

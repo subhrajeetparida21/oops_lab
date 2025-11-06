@@ -1,142 +1,233 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <complex>
 #include <string>
 using namespace std;
 
-template <class T>
+template<typename T>
 class Set {
-    vector<T> elements;
-
-    void makeUnique() {
-        sort(elements.begin(), elements.end());
-        elements.erase(unique(elements.begin(), elements.end()), elements.end());
-    }
-
+    vector<T> set;
+    void removeduplicates();
 public:
-    // Default constructor
-    Set() {}
+    Set();
+    Set(vector<T> &set);
+    Set(const Set &other); // fixed: const reference
+    Set<T> operator+(Set<T> &other);
+    Set<T> operator-(Set<T> &other);
+    Set<T> operator*(Set<T> &other);
+    bool operator<=(Set<T>& other);
+    bool operator<(Set<T>& other);
+    bool operator>=(Set<T>& other);
+    bool operator>(Set<T>& other);
+    bool operator==(Set<T>& other);
+    bool operator!=(Set<T>& other);
+    template<typename U> friend ostream& operator<<(ostream& out, const Set<U> &s);
+    template<typename U> friend istream& operator>>(istream& in, Set<U> &s);
+};
 
-    // Copy constructor
-    Set(const Set& other) : elements(other.elements) {}
+template<typename T>
+void Set<T>::removeduplicates() {
+    sort(set.begin(), set.end());
+    set.erase(unique(set.begin(), set.end()), set.end());
+}
 
-    // Assignment operator
-    Set& operator=(const Set& other) {
-        if (this != &other) {
-            elements = other.elements;
+template<typename T>
+Set<T>::Set() {}
+
+template<typename T>
+Set<T>::Set(vector<T> &set) {
+    this->set = set;
+    removeduplicates();
+}
+
+template<typename T>
+Set<T>::Set(const Set &other) { // fixed copy constructor
+    this->set = other.set;
+}
+
+template<typename T>
+Set<T> Set<T>::operator+(Set<T> &other) {
+    Set result = *this;
+    result.set.insert(result.set.end(), other.set.begin(), other.set.end());
+    result.removeduplicates();
+    return result;
+}
+
+template<typename T>
+Set<T> Set<T>::operator-(Set<T> &other) {
+    Set result = *this;
+    for (auto it = other.set.begin(); it != other.set.end(); ++it) {
+        for (int i = result.set.size() - 1; i >= 0; --i) {
+            if (result.set[i] == *it)
+                result.set.erase(result.set.begin() + i);
         }
-        return *this;
     }
+    return result;
+}
 
-    // Insert element
-    void insert(const T& val) {
-        elements.push_back(val);
-        makeUnique();
-    }
-
-    // Union (+)
-    Set operator+(const Set& other) const {
-        Set<T> result = *this;
-        result.elements.insert(result.elements.end(), other.elements.begin(), other.elements.end());
-        result.makeUnique();
-        return result;
-    }
-
-    // Difference (-)
-    Set operator-(const Set& other) const {
-        Set<T> result;
-        for (auto& x : elements) {
-            if (find(other.elements.begin(), other.elements.end(), x) == other.elements.end())
-                result.insert(x);
+template<typename T>
+Set<T> Set<T>::operator*(Set<T> &other) {
+    Set result;
+    for (auto it = other.set.begin(); it != other.set.end(); ++it) {
+        bool b = false;
+        for (auto i = this->set.begin(); i != this->set.end(); ++i) {
+            if (*i == *it) {
+                b = true;
+                break;
+            }
         }
-        return result;
+        if (b) result.set.push_back(*it);
     }
+    result.removeduplicates();
+    return result;
+}
 
-    // Intersection (*)
-    Set operator*(const Set& other) const {
-        Set<T> result;
-        for (auto& x : elements) {
-            if (find(other.elements.begin(), other.elements.end(), x) != other.elements.end())
-                result.insert(x);
-        }
-        return result;
+template<typename T>
+bool Set<T>::operator<=(Set<T> &other) {
+    for (auto it = this->set.begin(); it != this->set.end(); ++it) {
+        if (find(other.set.begin(), other.set.end(), *it) == other.set.end())
+            return false;
     }
+    return true;
+}
 
-    // Subset (<, <=)
-    bool operator<=(const Set& other) const {
-        for (auto& x : elements) {
-            if (find(other.elements.begin(), other.elements.end(), x) == other.elements.end())
-                return false;
-        }
-        return true;
+template<typename T>
+bool Set<T>::operator<(Set<T> &other) {
+    if (this->set == other.set) return false;
+    for (auto it = this->set.begin(); it != this->set.end(); ++it) {
+        if (find(other.set.begin(), other.set.end(), *it) == other.set.end())
+            return false;
     }
-    bool operator<(const Set& other) const {
-        return (*this <= other) && (elements.size() < other.elements.size());
+    return true;
+}
+
+template<typename T>
+bool Set<T>::operator>=(Set<T> &other) {
+    for (const auto &x : other.set) {
+        if (find(this->set.begin(), this->set.end(), x) == this->set.end())
+            return false;
     }
+    return true;
+}
 
-    // Superset (>, >=)
-    bool operator>=(const Set& other) const { return (other <= *this); }
-    bool operator>(const Set& other) const { return (other < *this); }
-
-    // Compare (==, !=)
-    bool operator==(const Set& other) const { return elements == other.elements; }
-    bool operator!=(const Set& other) const { return !(*this == other); }
-
-    // Output <<
-    friend ostream& operator<<(ostream& os, const Set& s) {
-        os << "{ ";
-        for (auto& x : s.elements) os << x << " ";
-        os << "}";
-        return os;
+template<typename T>
+bool Set<T>::operator>(Set<T> &other) {
+    if (this->set == other.set) return false;
+    for (const auto &x : other.set) {
+        if (find(this->set.begin(), this->set.end(), x) == this->set.end())
+            return false;
     }
+    return true;
+}
 
-    // Input >>
-    friend istream& operator>>(istream& is, Set& s) {
-        int n;
-        cout << "Enter number of elements: ";
-        is >> n;
-        s.elements.clear();
-        for (int i = 0; i < n; i++) {
-            T val;
-            cout << "Enter value " << i + 1 << ": ";
-            is >> val;
-            s.insert(val);
-        }
-        return is;
+template<typename T>
+bool Set<T>::operator==(Set<T> &other) {
+    return this->set == other.set;
+}
+
+template<typename T>
+bool Set<T>::operator!=(Set<T> &other) {
+    return this->set != other.set;
+}
+
+template<typename U>
+ostream& operator<<(ostream& out, const Set<U> &s) {
+    out << "{ ";
+    for (U x : s.set) out << x << " ";
+    out << "}";
+    return out;
+}
+
+template<typename U>
+istream& operator>>(istream& in, Set<U> &s) {
+    int n;
+    cout << "Enter number of elements: ";
+    in >> n;
+    s.set.resize(n);
+    cout << "Enter elements: ";
+    for (int i = 0; i < n; i++) in >> s.set[i];
+    s.removeduplicates();
+    return in;
+}
+
+class Complex {
+public:
+    double real, imag;
+    Complex(double r = 0, double i = 0);
+    bool operator==(const Complex& c) const;
+    friend istream& operator>>(istream& in, Complex& c);
+    friend ostream& operator<<(ostream& out, const Complex& c);
+    bool operator<(const Complex &other) const {
+        if (real != other.real) return real < other.real;
+        return imag < other.imag;
     }
 };
 
-// ---------- Example Main ----------
+Complex::Complex(double r, double i) : real(r), imag(i) {}
+bool Complex::operator==(const Complex& c) const { return real == c.real && imag == c.imag; }
+
+istream& operator>>(istream& in, Complex& c) {
+    cout << "Enter real and imaginary parts: ";
+    in >> c.real >> c.imag;
+    return in;
+}
+
+ostream& operator<<(ostream& out, const Complex& c) {
+    out << "(" << c.real << " + " << c.imag << "i)";
+    return out;
+}
+
+template<typename T>
+void menu() {
+    Set<T> set1, set2;
+    int choice;
+    cout << "\n--- Set Operations Menu ---\n"
+         << "1. Input Set 1\n"
+         << "2. Input Set 2\n"
+         << "3. Display Sets\n"
+         << "4. Union (Set1 + Set2)\n"
+         << "5. Intersection (Set1 * Set2)\n"
+         << "6. Difference (Set1 - Set2)\n"
+         << "7. Subset Check (Set1 <= Set2)\n"
+         << "8. Strict Subset Check (Set1 < Set2)\n"
+         << "9. Superset Check (Set1 >= Set2)\n"
+         << "10. Strict Superset Check (Set1 > Set2)\n"
+         << "11. Equality Check (Set1 == Set2)\n"
+         << "12. Inequality Check (Set1 != Set2)\n"
+         << "0. Exit\n";
+    do {
+        cout << "\nEnter your choice: ";
+        cin >> choice;
+        switch (choice) {
+            case 1: cin >> set1; break;
+            case 2: cin >> set2; break;
+            case 3: cout << "Set 1: " << set1 << "\nSet 2: " << set2 << endl; break;
+            case 4: cout << "Union: " << (set1 + set2) << endl; break;
+            case 5: cout << "Intersection: " << (set1 * set2) << endl; break;
+            case 6: cout << "Difference (Set1 - Set2): " << (set1 - set2) << endl; break;
+            case 7: cout << (set1 <= set2 ? "Set1 is subset of Set2" : "Set1 is not subset of Set2") << endl; break;
+            case 8: cout << (set1 < set2 ? "Set1 is strict subset of Set2" : "Set1 is not strict subset of Set2") << endl; break;
+            case 9: cout << (set1 >= set2 ? "Set1 is superset of Set2" : "Set1 is not superset of Set2") << endl; break;
+            case 10: cout << (set1 > set2 ? "Set1 is strict superset of Set2" : "Set1 is not strict superset of Set2") << endl; break;
+            case 11: cout << (set1 == set2 ? "Set1 equals Set2" : "Set1 does not equal Set2") << endl; break;
+            case 12: cout << (set1 != set2 ? "Set1 not equal to Set2" : "Set1 equals Set2") << endl; break;
+            case 0: cout << "Exiting menu.\n"; break;
+            default: cout << "Invalid choice. Try again.\n";
+        }
+    } while (choice != 0);
+}
+
 int main() {
-    Set<int> A, B;
-    cin >> A;
-    cin >> B;
-
-    cout << "A = " << A << endl;
-    cout << "B = " << B << endl;
-
-    cout << "Union (A + B): " << (A + B) << endl;
-    cout << "Difference (A - B): " << (A - B) << endl;
-    cout << "Intersection (A * B): " << (A * B) << endl;
-    cout << "A subset B ? " << ((A <= B) ? "Yes" : "No") << endl;
-    cout << "A superset B ? " << ((A >= B) ? "Yes" : "No") << endl;
-
-    Set<string> S1, S2;
-    S1.insert("apple"); S1.insert("banana");
-    S2.insert("banana"); S2.insert("cherry");
-    cout << "S1 = " << S1 << endl;
-    cout << "S2 = " << S2 << endl;
-    cout << "S1 * S2 = " << (S1 * S2) << endl;
-
-    Set<complex<double>> C1, C2;
-    C1.insert({1.1, 2.2});
-    C1.insert({3.3, 4.4});
-    C2.insert({3.3, 4.4});
-    C2.insert({5.5, 6.6});
-    cout << "C1 = " << C1 << endl;
-    cout << "C2 = " << C2 << endl;
-    cout << "C1 + C2 = " << (C1 + C2) << endl;
-
+    int typeChoice;
+    cout << "Select the type of set:\n";
+    cout << "1. Integer\n2. String\n3. Complex\n";
+    cout << "Enter choice: ";
+    cin >> typeChoice;
+    switch (typeChoice) {
+        case 1: menu<int>(); break;
+        case 2: menu<string>(); break;
+        case 3: menu<Complex>(); break;
+        default: cout << "Invalid type choice.\n"; return 0;
+    }
     return 0;
 }

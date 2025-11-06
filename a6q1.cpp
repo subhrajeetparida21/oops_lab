@@ -3,154 +3,166 @@
 #include <complex>
 using namespace std;
 
-template <class T>
+template<typename T>
 class Stack {
     struct Node {
         T data;
         Node* next;
-        Node(const T& d, Node* n = nullptr) : data(d), next(n) {}
+        Node(T v, Node* n=nullptr):data(v),next(n){}
     };
-
     Node* top;
-
 public:
-    // Default constructor
-    Stack() : top(nullptr) {}
-
-    // Copy constructor
-    Stack(const Stack& other) : top(nullptr) {
-        if (other.top) {
-            Node* temp = other.top;
-            Stack<T> tempStack;
-            while (temp) {
-                tempStack.push(temp->data);
-                temp = temp->next;
-            }
-            temp = tempStack.top;
-            while (temp) {
-                push(temp->data);
-                temp = temp->next;
-            }
+    Stack():top(nullptr){}
+    Stack(const Stack& s){
+        top=nullptr;
+        if(s.top){
+            Node* p=s.top;
+            Node* arr[1000];
+            int k=0;
+            while(p){ arr[k++]=p; p=p->next; }
+            for(int i=k-1;i>=0;i--) push(arr[i]->data);
         }
     }
-
-    // Destructor
-    ~Stack() {
-        while (!isEmpty()) pop();
+    ~Stack(){ while(top) pop(); }
+    void push(T v){ top=new Node(v,top); }
+    void pop(){ if(top){ Node* t=top; top=top->next; delete t; } else cout<<"Stack is empty!\n"; }
+    bool empty(){ return top==nullptr; }
+    T peek(){ return top->data; }
+    Stack operator!(){
+        Stack r;
+        Node* p=top;
+        while(p){ r.push(p->data); p=p->next; }
+        return r;
     }
-
-    // Assignment operator
-    Stack& operator=(const Stack& other) {
-        if (this != &other) {
-            while (!isEmpty()) pop();
-            Stack<T> temp(other);
-            Node* cur = temp.top;
-            while (cur) {
-                push(cur->data);
-                cur = cur->next;
-            }
+    bool operator==(Stack& s){
+        Node* p=top; Node* q=s.top;
+        while(p&&q){
+            if(p->data!=q->data) return false;
+            p=p->next; q=q->next;
+        }
+        return p==nullptr && q==nullptr;
+    }
+    Stack& operator=(const Stack& s){
+        if(this==&s) return *this;
+        while(top) pop();
+        if(s.top){
+            Node* p=s.top;
+            Node* arr[1000];
+            int k=0;
+            while(p){ arr[k++]=p; p=p->next; }
+            for(int i=k-1;i>=0;i--) push(arr[i]->data);
         }
         return *this;
     }
-
-    // Push element
-    void push(const T& value) {
-        top = new Node(value, top);
+    friend istream& operator>>(istream& in, Stack& s){
+        T v; in>>v; s.push(v); return in;
     }
-
-    // Pop element
-    void pop() {
-        if (!isEmpty()) {
-            Node* temp = top;
-            top = top->next;
-            delete temp;
-        }
-    }
-
-    // Peek top
-    T peek() const {
-        if (!isEmpty()) return top->data;
-        throw runtime_error("Stack empty");
-    }
-
-    // Check empty
-    bool isEmpty() const {
-        return top == nullptr;
-    }
-
-    // Compare ==
-    bool operator==(const Stack& other) const {
-        Node* a = top;
-        Node* b = other.top;
-        while (a && b) {
-            if (a->data != b->data) return false;
-            a = a->next;
-            b = b->next;
-        }
-        return a == nullptr && b == nullptr;
-    }
-
-    // Reverse (!)
-    Stack operator!() const {
-        Stack<T> rev;
-        Node* cur = top;
-        while (cur) {
-            rev.push(cur->data);
-            cur = cur->next;
-        }
-        return rev;
-    }
-
-    // Output <<
-    friend ostream& operator<<(ostream& os, const Stack& s) {
-        Node* cur = s.top;
-        os << "[ ";
-        while (cur) {
-            os << cur->data << " ";
-            cur = cur->next;
-        }
-        os << "]";
-        return os;
-    }
-
-    // Input >>
-    friend istream& operator>>(istream& is, Stack& s) {
-        int n;
-        cout << "Enter number of elements: ";
-        is >> n;
-        for (int i = 0; i < n; i++) {
-            T val;
-            cout << "Enter value " << i + 1 << ": ";
-            is >> val;
-            s.push(val);
-        }
-        return is;
+    friend ostream& operator<<(ostream& out, Stack& s){
+        Node* p=s.top;
+        out<<"[Top] ";
+        while(p){ out<<p->data<<" -> "; p=p->next; }
+        out<<"NULL";
+        return out;
     }
 };
 
-// ---------- Example Main ----------
-int main() {
-    Stack<int> s1;
-    cin >> s1;
-    cout << "Stack s1: " << s1 << endl;
+template<typename T>
+void menu(Stack<T>& s){
+    int op;
+    do{
+        cout<<"\n--- Stack Menu ---\n";
+        cout<<"1. Push\n";
+        cout<<"2. Pop\n";
+        cout<<"3. Display\n";
+        cout<<"4. Reverse (!)\n";
+        cout<<"5. Copy (=)\n";
+        cout<<"6. Compare (==)\n";
+        cout<<"0. Exit\n";
+        cout<<"Enter choice: ";
+        cin>>op;
 
-    Stack<int> s2 = s1;  // copy constructor
-    cout << "Copied Stack s2: " << s2 << endl;
+        if(op==1){ 
+            cout<<"Enter value: "; 
+            T x; cin>>x; 
+            s.push(x); 
+            cout<<"Pushed!\n"; 
+        }
+        else if(op==2){ 
+            s.pop(); 
+        }
+        else if(op==3){ 
+            cout<<s<<endl; 
+        }
+        else if(op==4){ 
+            Stack<T> r=!s; 
+            cout<<"Reversed Stack: "<<r<<endl; 
+        }
+        else if(op==5){ 
+            Stack<T> c; c=s; 
+            cout<<"Copied Stack: "<<c<<endl; 
+        }
+        else if(op==6){ 
+            Stack<T> t; 
+            int n; 
+            cout<<"How many elements in 2nd stack? "; 
+            cin>>n; 
+            for(int i=0;i<n;i++){ 
+                cout<<"Enter value "<<i+1<<": "; 
+                T x; cin>>x; 
+                t.push(x);
+            } 
+            if(s==t) cout<<"Stacks are Equal\n"; 
+            else cout<<"Stacks are Not Equal\n"; 
+        }
+        else if(op==0){ 
+            cout<<"Exiting...\n"; 
+        }
+        else cout<<"Invalid choice!\n";
 
-    cout << "s1 == s2 ? " << (s1 == s2 ? "Yes" : "No") << endl;
+    }while(op!=0);
+}
 
-    Stack<int> s3 = !s1; // reverse
-    cout << "Reversed Stack s3: " << s3 << endl;
+int main(){
+    cout<<"Choose datatype for Stack:\n";
+    cout<<"1. Integer\n";
+    cout<<"2. String\n";
+    cout<<"3. Complex Number\n";
+    cout<<"Enter choice: ";
+    int ch; cin>>ch;
 
-    Stack<string> s4;
-    s4.push("Hello");
-    s4.push("World");
-    cout << "Stack of strings: " << s4 << endl;
+    if(ch==1){
+        Stack<int> s; 
+        menu(s);
+    }
+    else if(ch==2){
+        Stack<string> s; 
+        menu(s);
+    }
+    else if(ch==3){
+        Stack<complex<double>> s; 
+        int op;
+        do{
+            cout<<"\n--- Stack Menu ---\n";
+            cout<<"1. Push\n2. Pop\n3. Display\n4. Reverse\n5. Copy\n6. Compare\n0. Exit\n";
+            cout<<"Enter choice: "; cin>>op;
 
-    Stack<complex<double>> s5;
-    s5.push({2.3, 4.5});
-    s5.push({1.1, -3.2});
-    cout << "Stack of complex numbers: " << s5 << endl;
-
-    return 0;
+            if(op==1){ 
+                double a,b; 
+                cout<<"Enter real and imag: "; cin>>a>>b; 
+                s.push({a,b}); 
+                cout<<"Pushed!\n"; 
+            }
+            else if(op==2){ s.pop(); }
+            else if(op==3){ cout<<s<<endl; }
+            else if(op==4){ Stack<complex<double>> r=!s; cout<<"Reversed: "<<r<<endl; }
+            else if(op==5){ Stack<complex<double>> c; c=s; cout<<"Copied: "<<c<<endl; }
+            else if(op==6){ 
+                Stack<complex<double>> t; int n; 
+                cout<<"How many elements in 2nd stack? "; cin>>n; 
+                for(int i=0;i<n;i++){ double a,b; cout<<"Enter real imag: "; cin>>a>>b; t.push({a,b}); }
+                if(s==t) cout<<"Stacks are Equal\n"; else cout<<"Stacks are Not Equal\n"; 
+            }
+            else if(op==0){ cout<<"Exiting...\n"; }
+        }while(op!=0);
+    }
 }

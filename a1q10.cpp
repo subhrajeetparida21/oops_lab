@@ -56,7 +56,6 @@ int main()
                   cout<<endl;
             }
       }
-      
       if(n2!=n3)
             cout<<"Both arrays cannnot be mulitplied";
       else
@@ -74,6 +73,5 @@ int main()
                   cout<<endl;
             }
       }
-
             return 0;
 }
